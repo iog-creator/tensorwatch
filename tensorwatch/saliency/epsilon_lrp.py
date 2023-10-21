@@ -52,9 +52,9 @@ class InnvestigateModel(torch.nn.Module):
         super(InnvestigateModel, self).__init__()
         self.model = the_model
         self.device = torch.device("cpu", 0)
-        self.prediction = None
         self.r_values_per_layer = None
         self.only_max_score = None
+        self.prediction = None
         # Initialize the 'Relevance Propagator' with the chosen rule.
         # This will be used to back-propagate the relevance values
         # through the layers in the innvestigate method.
@@ -64,15 +64,16 @@ class InnvestigateModel(torch.nn.Module):
 
         # Parsing the individual model layers
         self.register_hooks(self.model)
-        if method == "b-rule" and float(beta) in (-1., 0):
+        if method == "b-rule" and float(beta) in {-1.0, 0}:
             which = "positive" if beta == -1 else "negative"
             which_opp = "negative" if beta == -1 else "positive"
-            print("WARNING: With the chosen beta value, "
-                  "only " + which + " contributions "
-                  "will be taken into account.\nHence, "
-                  "if in any layer only " + which_opp +
-                  " contributions exist, the "
-                  "overall relevance will not be conserved.\n")
+            print(
+                f"WARNING: With the chosen beta value, only {which}"
+                + " contributions "
+                "will be taken into account.\nHence, "
+                "if in any layer only " + which_opp + " contributions exist, the "
+                "overall relevance will not be conserved.\n"
+            )
 
     def cuda(self, device=None):
         self.device = torch.device("cuda", device)
@@ -198,16 +199,13 @@ class InnvestigateModel(torch.nn.Module):
                 max_v, _ = torch.max(self.prediction, dim=1, keepdim=True)
                 only_max_score = torch.zeros_like(self.prediction).to(self.device)
                 only_max_score[max_v == self.prediction] = self.prediction[max_v == self.prediction]
-                relevance_tensor = only_max_score.view(org_shape)
-                self.prediction.view(org_shape)
-
             else:
                 org_shape = self.prediction.size()
                 self.prediction = self.prediction.view(org_shape[0], -1)
                 only_max_score = torch.zeros_like(self.prediction).to(self.device)
                 only_max_score[:, rel_for_class] += self.prediction[:, rel_for_class]
-                relevance_tensor = only_max_score.view(org_shape)
-                self.prediction.view(org_shape)
+            relevance_tensor = only_max_score.view(org_shape)
+            self.prediction.view(org_shape)
 
             # We have to iterate through the model backwards.
             # The module list is computed for every forward pass

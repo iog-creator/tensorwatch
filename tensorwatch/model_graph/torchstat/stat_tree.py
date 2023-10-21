@@ -10,8 +10,7 @@ class StatTree(object):
     def get_same_level_max_node_depth(self, query_node):
         if query_node.name == self.root_node.name:
             return 0
-        same_level_depth = max([child.depth for child in query_node.parent.children])
-        return same_level_depth
+        return max(child.depth for child in query_node.parent.children)
 
     def update_stat_nodes_granularity(self):
         q = queue.Queue()
@@ -26,12 +25,10 @@ class StatTree(object):
         self.update_stat_nodes_granularity()
 
         collected_nodes = []
-        stack = list()
-        stack.append(self.root_node)
-        while len(stack) > 0:
+        stack = [self.root_node]
+        while stack:
             node = stack.pop()
-            for child in reversed(node.children):
-                stack.append(child)
+            stack.extend(iter(reversed(node.children)))
             if node.depth == query_granularity:
                 collected_nodes.append(node)
             if node.depth < query_granularity <= node.granularity:
@@ -55,7 +52,7 @@ class StatNode(object):
         self._granularity = 1
         self._depth = 1
         self.parent = parent
-        self.children = list()
+        self.children = []
 
     @property
     def name(self):
@@ -77,7 +74,7 @@ class StatNode(object):
     def depth(self):
         d = self._depth
         if len(self.children) > 0:
-            d += max([child.depth for child in self.children])
+            d += max(child.depth for child in self.children)
         return d
 
     @property

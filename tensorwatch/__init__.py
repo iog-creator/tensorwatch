@@ -32,7 +32,6 @@ from .data_utils import pyt_ds2list, sample_by_class, col2array, search_similar
 
 def draw_model(model, input_shape=None, orientation='TB', png_filename=None): #orientation = 'LR' for landscpe
     from .model_graph.hiddenlayer import pytorch_draw_model
-    g = pytorch_draw_model.draw_graph(model, input_shape)
-    return g
+    return pytorch_draw_model.draw_graph(model, input_shape)
 
 

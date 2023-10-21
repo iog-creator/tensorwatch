@@ -12,10 +12,7 @@ def pyt_tensor2np(pyt_tensor):
         return None
     if isinstance(pyt_tensor, torch.Tensor):
         n = pyt_tensor.data.cpu().numpy()
-        if len(n.shape) == 1:
-            return n[0]
-        else:
-            return n
+        return n[0] if len(n.shape) == 1 else n
     elif isinstance(pyt_tensor, np.ndarray):
         return pyt_tensor
     else:
@@ -38,8 +35,7 @@ def sample_by_class(data, n_samples, class_col=1, shuffle=True):
             samples[cls] = []
         if len(samples[cls]) < n_samples:
             samples[cls].append(data[i])
-    samples = sum(samples.values(), [])
-    return samples
+    return sum(samples.values(), [])
 
 def col2array(dataset, col):
     return [row[col] for row in dataset]

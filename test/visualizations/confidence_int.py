@@ -8,6 +8,6 @@ v.show()
 
 for i in range(10):
     i = float(i)
-    s.write(tw.PointData(i, i*i, low=i*i-i, high=i*i+i))
+    s.write(tw.PointData(i, i**2, low=i**2 - i, high=i**2 + i))
 
 tw.plt_loop()

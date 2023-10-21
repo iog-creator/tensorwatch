@@ -72,9 +72,7 @@ def get_pfm_array(response):
 # creates same list as len of seq filled with val - if val is already not a list of same size
 def fill_like(val, seq):
     l = len(seq)
-    if is_array_like(val) and len(val) == l:
-        return val
-    return [val] * len(seq)
+    return val if is_array_like(val) and len(val) == l else [val] * len(seq)
 
 def is_array_like(obj, string_is_array=False, tuple_is_array=True):
     result = hasattr(obj, "__len__") and hasattr(obj, '__getitem__') 
@@ -88,13 +86,12 @@ def is_scalar(x):
     return x is None or np.isscalar(x)
 
 def is_scaler_array(x): #detects (x,y) or [x, y]
-    if is_array_like(x):
-        if len(x) > 0:
-            return len(x) if is_scalar(x[0]) else -1
-        else:
-            return 0
-    else:
+    if not is_array_like(x):
         return -1
+    if len(x) > 0:
+        return len(x) if is_scalar(x[0]) else -1
+    else:
+        return 0
 
 def get_public_fields(obj):
     return [attr for attr in dir(obj)
@@ -108,9 +105,7 @@ def set_default(dictionary, key, default_val, replace_none=True):
         dictionary[key] = default_val
 
 def to_array_like(val):
-    if is_array_like(val):
-        return val
-    return [val]
+    return val if is_array_like(val) else [val]
     
 def to_dict(obj):
     return dict([attr, getattr(obj, attr)] for attr in get_public_fields(obj))
@@ -146,8 +141,7 @@ def to_eularian_angles(q):
     t2 = +2.0 * (w*y - z*x)
     if (t2 > 1.0):
         t2 = 1
-    if (t2 < -1.0):
-        t2 = -1.0
+    t2 = max(t2, -1.0)
     pitch = math.asin(t2)
 
     # yaw (z-axis rotation)
@@ -191,45 +185,39 @@ def wait_key(message = ''):
     
 def read_pfm(file):
     """ Read a pfm file """
-    file = open(file, 'rb')
+    with open(file, 'rb') as file:
+        color = None
+        width = None
+        height = None
+        scale = None
+        endian = None
 
-    color = None
-    width = None
-    height = None
-    scale = None
-    endian = None
+        header = file.readline().rstrip()
+        header = str(bytes.decode(header, encoding='utf-8'))
+        if header == 'PF':
+            color = True
+        elif header == 'Pf':
+            color = False
+        else:
+            raise Exception('Not a PFM file.')
 
-    header = file.readline().rstrip()
-    header = str(bytes.decode(header, encoding='utf-8'))
-    if header == 'PF':
-        color = True
-    elif header == 'Pf':
-        color = False
-    else:
-        raise Exception('Not a PFM file.')
+        temp_str = str(bytes.decode(file.readline(), encoding='utf-8'))
+        if dim_match := re.match(r'^(\d+)\s(\d+)\s$', temp_str):
+            width, height = map(int, dim_match.groups())
+        else:
+            raise Exception('Malformed PFM header.')
 
-    temp_str = str(bytes.decode(file.readline(), encoding='utf-8'))
-    dim_match = re.match(r'^(\d+)\s(\d+)\s$', temp_str)
-    if dim_match:
-        width, height = map(int, dim_match.groups())
-    else:
-        raise Exception('Malformed PFM header.')
+        scale = float(file.readline().rstrip())
+        if scale < 0: # little-endian
+            endian = '<'
+            scale = -scale
+        else:
+            endian = '>' # big-endian
 
-    scale = float(file.readline().rstrip())
-    if scale < 0: # little-endian
-        endian = '<'
-        scale = -scale
-    else:
-        endian = '>' # big-endian
+        data = np.fromfile(file, f'{endian}f')
+        shape = (height, width, 3) if color else (height, width)
 
-    data = np.fromfile(file, endian + 'f')
-    shape = (height, width, 3) if color else (height, width)
-
-    data = np.reshape(data, shape)
-    # DEY: I don't know why this was there.
-    #data = np.flipud(data)
-    file.close()
-    
+        data = np.reshape(data, shape)
     return data, scale
 
     
@@ -334,10 +322,10 @@ def frange(start, stop=None, step=None, steps=None):
         if step is None:
             step = 1
         steps = int((stop-start)/step)
-    else:
-        if step is not None:
-            raise ValueError("Both step and steps cannot be specified")
+    elif step is None:
         step = (stop-start)/steps
+    else:
+        raise ValueError("Both step and steps cannot be specified")
     for _ in range(steps):
         yield start
         start += step  

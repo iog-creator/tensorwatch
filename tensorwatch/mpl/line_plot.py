@@ -117,7 +117,7 @@ class LinePlot(BaseMplPlot):
         lows, highs = [], [] # confidence interval
 
         unpacker = lambda a0=None,a1=None,a2=None,a3=None,a4=None,a5=None,a6=None,a7=None,*_:\
-            (a0,a1,a2,a3,a4,a5,a6,a7)
+                (a0,a1,a2,a3,a4,a5,a6,a7)
 
         # add each value in trace data
         # each value is of the form:
@@ -141,7 +141,7 @@ class LinePlot(BaseMplPlot):
                     x, y, low, high, ann, txt, clr, _ = unpacker(*val)
             elif isinstance(val, PointData):
                 x, y, z, low, high, ann, txt, clr = val.x, val.y, val.z, \
-                    val.low, val.high, val.annotation, val.text, val.color
+                        val.low, val.high, val.annotation, val.text, val.color
             else:
                 y = val
 
@@ -173,11 +173,11 @@ class LinePlot(BaseMplPlot):
 
         if stream_vis.fill_between_col is not None:
             stream_vis.fill_between_col.remove()
-        if len(lows) > 0 and len(highs) > 0:
+        if lows and highs:
             stream_vis.ax.fill_between(xdata, highs, lows, color=stream_vis.color, alpha=0.2)
         for ann in anndata:
             stream_vis.xylabel_refs.append(stream_vis.ax.text( \
-                ann['x'], ann['y'], ann['text']))
+                    ann['x'], ann['y'], ann['text']))
 
         stream_vis.ax.relim()
         stream_vis.ax.autoscale_view(True,True,True)

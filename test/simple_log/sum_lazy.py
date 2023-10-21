@@ -5,7 +5,7 @@ import tensorwatch as tw
 w = tw.Watcher()
 
 weights = None
-for i in range(10000):
+for _ in range(10000):
     weights = [random.random() for _ in range(5)]
 
     # let watcher observe variables we have

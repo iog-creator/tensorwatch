@@ -86,8 +86,9 @@ class Node():
         self.op = op
         self.repeat = 1
         if output_shape:
-            assert isinstance(output_shape, (tuple, list)),\
-            "output_shape must be a tuple or list but received {}".format(type(output_shape))
+            assert isinstance(
+                output_shape, (tuple, list)
+            ), f"output_shape must be a tuple or list but received {type(output_shape)}"
         self.output_shape = output_shape
         self.params = params if params else {}
         self._caption = ""
@@ -111,7 +112,7 @@ class Node():
             if np.unique(stride).size == 1:
                 stride = stride[0]
             if stride != 1:
-                title += "/s{}".format(str(stride))
+                title += f"/s{str(stride)}"
         #         # Transposed
         #         if node.transposed:
         #             name = "Transposed" + name
@@ -119,19 +120,7 @@ class Node():
 
     @property
     def caption(self):
-        if self._caption:
-            return self._caption
-
-        caption = ""
-
-        # Stride
-        # if "stride" in self.params:
-        #     stride = self.params["stride"]
-        #     if np.unique(stride).size == 1:
-        #         stride = stride[0]
-        #     if stride != 1:
-        #         caption += "/{}".format(str(stride))
-        return caption
+        return self._caption if self._caption else ""
 
     def __repr__(self):
         args = (self.op, self.name, self.id, self.title, self.repeat)
@@ -241,32 +230,31 @@ class Graph():
         """Returns nodes connecting out of the given node (or list of nodes)."""
         nodes = node if isinstance(node, list) else [node]
         node_ids = [self.id(n) for n in nodes]
-        # Find edges outgoing from this group but not incoming to it
-        outgoing = [self[e[1]] for e in self.edges
-                    if e[0] in node_ids and e[1] not in node_ids]
-        return outgoing
+        return [
+            self[e[1]]
+            for e in self.edges
+            if e[0] in node_ids and e[1] not in node_ids
+        ]
 
     def incoming(self, node):
         """Returns nodes connecting to the given node (or list of nodes)."""
         nodes = node if isinstance(node, list) else [node]
         node_ids = [self.id(n) for n in nodes]
-        # Find edges incoming to this group but not outgoing from it
-        incoming = [self[e[0]] for e in self.edges
-                    if e[1] in node_ids and e[0] not in node_ids]
-        return incoming
+        return [
+            self[e[0]]
+            for e in self.edges
+            if e[1] in node_ids and e[0] not in node_ids
+        ]
 
     def siblings(self, node):
         """Returns all nodes that share the same parent (incoming node) with
         the given node, including the node itself.
         """
         incoming = self.incoming(node)
-        # TODO: Not handling the case of multiple incoming nodes yet
-        if len(incoming) == 1:
-            incoming = incoming[0]
-            siblings = self.outgoing(incoming)
-            return siblings
-        else:
+        if len(incoming) != 1:
             return [node]
+        incoming = incoming[0]
+        return self.outgoing(incoming)
 
     def __getitem__(self, key):
         if isinstance(key, list):
@@ -359,13 +347,12 @@ class Graph():
                  fontname=self.theme["font_name"])
 
         for k, n in self.nodes.items():
-            label = "<tr><td cellpadding='6'>{}</td></tr>".format(n.title)
+            label = f"<tr><td cellpadding='6'>{n.title}</td></tr>"
             if n.caption:
-                label += "<tr><td>{}</td></tr>".format(n.caption)
+                label += f"<tr><td>{n.caption}</td></tr>"
             if n.repeat > 1:
-                label += "<tr><td align='right' cellpadding='2'>x{}</td></tr>".format(n.repeat)
-            label = "<<table border='0' cellborder='0' cellpadding='0'>{}</table>>".\
-                format(label)
+                label += f"<tr><td align='right' cellpadding='2'>x{n.repeat}</td></tr>"
+            label = f"<<table border='0' cellborder='0' cellpadding='0'>{label}</table>>"
 
             # figure out tooltip
             tooltips = set()
@@ -375,7 +362,7 @@ class Graph():
                 for params in n.combo_params:
                     if len(params):
                         tooltips.update([str(params)])
-            
+
             # figure out shape and color
             layer_overrides = self.theme.get('layer_overrides', {})
             op_overrides = layer_overrides.get(n.op or n.name, {})
@@ -398,5 +385,5 @@ class Graph():
         dot.format = format
         directory, file_name = os.path.split(path)
         # Remove extension from file name. dot.render() adds it.
-        file_name = file_name.replace("." + format, "")
+        file_name = file_name.replace(f".{format}", "")
         dot.render(file_name, directory=directory, cleanup=True)

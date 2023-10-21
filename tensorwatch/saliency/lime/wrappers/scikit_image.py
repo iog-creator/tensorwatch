@@ -41,21 +41,17 @@ class BaseWrapper(object):
             else:
                 raise TypeError('invalid argument: tested object is not callable,\
                  please provide a valid target_fn')
-        elif isinstance(self.target_fn, types.FunctionType) \
-                or isinstance(self.target_fn, types.MethodType):
+        elif isinstance(self.target_fn, (types.FunctionType, types.MethodType)):
             a_valid_fn.append(self.target_fn)
         else:
             a_valid_fn.append(self.target_fn.__call__)
 
-        if not isinstance(parameters, str):
-            for p in parameters:
-                for fn in a_valid_fn:
-                    if has_arg(fn, p):
-                        pass
-                    else:
-                        raise ValueError('{} is not a valid parameter'.format(p))
-        else:
+        if isinstance(parameters, str):
             raise TypeError('invalid argument: list or dictionnary expected')
+        for p in parameters:
+            for fn in a_valid_fn:
+                if not has_arg(fn, p):
+                    raise ValueError(f'{p} is not a valid parameter')
 
     def set_params(self, **params):
         """Sets the parameters of this estimator.
@@ -79,10 +75,11 @@ class BaseWrapper(object):
             in both target_params and fn's arguments.
         """
         override = override or {}
-        result = {}
-        for name, value in self.target_params.items():
-            if has_arg(fn, name):
-                result.update({name: value})
+        result = {
+            name: value
+            for name, value in self.target_params.items()
+            if has_arg(fn, name)
+        }
         result.update(override)
         return result
 

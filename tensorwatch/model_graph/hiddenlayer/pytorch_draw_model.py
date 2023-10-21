@@ -63,7 +63,6 @@ def draw_img_classifier(model, dataset=None, display_param_nodes=False,
         g = SummaryGraph(non_para_model, dummy_input)
 
         return sgraph2dot(g, display_param_nodes, rankdir, styles)
-        print("Network PNG image generation completed")
     except FileNotFoundError:
         print("An error has occured while generating the network PNG image.")
         print("Please check that you have graphviz installed.")
@@ -168,7 +167,4 @@ def create_pydot_graph(op_nodes_desc, data_nodes, param_nodes, edges, rankdir='T
     return pydot_graph
 
 def data_node_has_parent(g, id):
-    for edge in g.edges:
-        if edge.dst == id:
-            return True
-    return False
+    return any(edge.dst == id for edge in g.edges)

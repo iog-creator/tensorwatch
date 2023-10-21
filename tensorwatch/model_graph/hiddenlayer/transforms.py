@@ -168,7 +168,7 @@ class FoldDuplicates():
                                 output_shape=matches[-1].output_shape,
                                 combo_params=_concate_params(matches))
                     combo._caption = node.caption
-                    combo.repeat = sum([n.repeat for n in matches])
+                    combo.repeat = sum(n.repeat for n in matches)
                     graph.replace(matches, combo)
                     break
         return graph

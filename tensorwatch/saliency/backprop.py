@@ -138,16 +138,12 @@ class SmoothGradExplainer(object):
 
         total_gradients = 0
 
-        for i in range(self.nsamples):
+        for _ in range(self.nsamples):
             noise = torch.randn_like(inp) * stdev
 
             noisy_inp = inp + noise
             noisy_inp.retain_grad()
             grad = self.base_explainer.explain(noisy_inp, ind)
 
-            if self.magnitude:
-                total_gradients += grad ** 2
-            else:
-                total_gradients += grad
-
+            total_gradients += grad ** 2 if self.magnitude else grad
         return total_gradients / self.nsamples

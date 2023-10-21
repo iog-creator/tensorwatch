@@ -34,7 +34,9 @@ class Watcher(WatcherBase):
                 is_server=True, callback=self._clisrv_callback)
 
             # notify existing listeners of our ID
-            self._zmq_stream_pub = self._stream_factory.get_streams(stream_types=['tcp:'+str(self.port)], for_write=True)[0]
+            self._zmq_stream_pub = self._stream_factory.get_streams(
+                stream_types=[f'tcp:{str(self.port)}'], for_write=True
+            )[0]
 
             # ZMQ quirk: we must wait a bit after opening port and before sending message
             # TODO: can we do better?
@@ -46,20 +48,23 @@ class Watcher(WatcherBase):
         self._zmq_stream_pub.write(ServerMgmtMsg(event_name=ServerMgmtMsg.EventServerStart, 
             event_args=self.srv_name), topic=PublisherTopics.ServerMgmt)
 
-    def devices_or_default(self, devices:Sequence[str])->Sequence[str]: # overriden
+    def devices_or_default(self, devices:Sequence[str]) -> Sequence[str]: # overriden
         # TODO: this method is duplicated in Watcher and WatcherClient
 
         # make sure TCP port is attached to tcp device
         if devices is not None:
-            return ['tcp:' + str(self.port) if device=='tcp' else device for device in devices]
+            return [
+                f'tcp:{str(self.port)}' if device == 'tcp' else device
+                for device in devices
+            ]
 
         # if no devices specified then use our filename and tcp:port as default devices
         devices = []
-        # first open file device because it may have older data 
+        # first open file device because it may have older data
         if self.filename is not None:
-            devices.append('file:' + self.filename)
+            devices.append(f'file:{self.filename}')
         if self.port is not None:
-            devices.append('tcp:' + str(self.port))
+            devices.append(f'tcp:{str(self.port)}')
         return devices
 
     def close(self):
@@ -95,4 +100,4 @@ class Watcher(WatcherBase):
             stream_name = clisrv_req.req_data
             return self.del_stream(stream_name)
         else:
-            raise ValueError('ClientServer Request Type {} is not recognized'.format(clisrv_req))
+            raise ValueError(f'ClientServer Request Type {clisrv_req} is not recognized')

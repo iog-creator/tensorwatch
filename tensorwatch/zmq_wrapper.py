@@ -64,11 +64,10 @@ class ZmqWrapper:
                 utils.debug_log('starting ioloop...')
                 ZmqWrapper._ioloop.start()
             except zmq.ZMQError as ex:
-                if ex.errno == errno.EINTR:
-                    logging.exception('Cannot start IOLoop - ZMQError')
-                    continue
-                else:
+                if ex.errno != errno.EINTR:
                     raise
+                logging.exception('Cannot start IOLoop - ZMQError')
+                continue
 
     # Utility method to run given function on IOLoop
     # this is blocking method if has_rresult=True
@@ -202,15 +201,14 @@ class ZmqWrapper:
         def _receive_obj(self):
             [topic, obj_s] = self._socket.recv_multipart() # pylint: disable=unbalanced-tuple-unpacking
             if topic != self.topic:
-                raise ValueError('Expected topic: %s, Received topic: %s' % (topic, self.topic)) 
+                raise ValueError(f'Expected topic: {topic}, Received topic: {self.topic}')
             return pickle.loads(obj_s)
 
         def receive_obj(self):
             return ZmqWrapper._io_loop_call(True, self._receive_obj)
 
         def _get_socket_identity(self):
-            ep_id = self._socket.getsockopt(zmq.LAST_ENDPOINT)
-            return ep_id
+            return self._socket.getsockopt(zmq.LAST_ENDPOINT)
 
         def get_socket_identity(self):
             return ZmqWrapper._io_loop_call(True, self._get_socket_identity)

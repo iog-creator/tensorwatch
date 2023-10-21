@@ -12,10 +12,9 @@ class StreamUnion(Stream):
         self.child_streams = child_streams
 
         # when someone does write to us, we write to all our listeners
-        if for_write:
-            for child_stream in child_streams:
+        for child_stream in child_streams:
+                # when someone does write to us, we write to all our listeners
+            if for_write:
                 child_stream.subscribe(self)
-        else:
-            # union of all child streams
-            for child_stream in child_streams:
+            else:
                 self.subscribe(child_stream)

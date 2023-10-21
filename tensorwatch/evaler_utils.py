@@ -63,7 +63,7 @@ def combine_groups(existing_groups:dict, new_groups:Iterable[tuple],
         existing_groups[new_group[0]] = list(islice(merged, k))
 
 def topk(labels:Sized, metric:Sized=None, items:Sized=None, k:int=1, 
-                 order='rnd', sort_groups=False, out_f:callable=None)->Iterable[Any]:
+                 order='rnd', sort_groups=False, out_f:callable=None) -> Iterable[Any]:
     """Returns groups of k items for each label sorted by metric
 
     This function accepts batch values, for example, for image classification with batch of 100,
@@ -96,15 +96,15 @@ def topk(labels:Sized, metric:Sized=None, items:Sized=None, k:int=1,
         items = [tensor_utils.to_np_list(item) for item in items]
 
     # convert columns to rows
-    batch = list((*i[:2], i[2:]) for i in zip(labels, metric, *items))
+    batch = [(*i[:2], i[2:]) for i in zip(labels, metric, *items)]
 
     # group by label, sort item in each group by metric, take k items in each group
-    reverse = True if order=='dsc' else False
+    reverse = order == 'dsc'
     key_f = (lambda i: (i[1])) if order != 'rnd' else lambda i: random.random()
     groups = group_reduce(batch, key_f=lambda b: b[0], # key is label
         # sort by metric and take k items
         reducer=lambda bi: islice(sorted(bi, key=key_f, reverse=reverse), k))
-    
+
     # sort groups by key so output is consistent each time (order of digits, for example, in MNIST)
     if sort_groups:
         groups = sorted(groups.items(), key=lambda g: g[0])
@@ -117,7 +117,7 @@ def topk(labels:Sized, metric:Sized=None, items:Sized=None, k:int=1,
 
 
 def topk_all(batches:Iterable[Any], batch_vals:Callable[[Any], Tuple[Sized, Sized, Sized]], 
-        out_f:callable, k:int=1, order='rnd', sort_groups=True)->Iterable[Any]:
+        out_f:callable, k:int=1, order='rnd', sort_groups=True) -> Iterable[Any]:
     """Same as k but here we maintain top items across entire run
     """
 
@@ -134,7 +134,7 @@ def topk_all(batches:Iterable[Any], batch_vals:Callable[[Any], Tuple[Sized, Size
                               sort_groups=False)
 
         # update best/worst we have seen so far by sorting on metric
-        reverse = True if order=='dsc' else False
+        reverse = order == 'dsc'
         sort_key = (lambda g: (g[1])) if order != 'rnd' else lambda g: random.random()
         combine_groups(merged_groups, groups, sort_key=sort_key, reverse=reverse, k=k)
 

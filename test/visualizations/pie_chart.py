@@ -9,7 +9,7 @@ def static_pie():
     v.show()
 
     for i in range(6):
-        s.write(('label'+str(i), random.random()*10, None, 0.5 if i==3 else 0))
+        s.write((f'label{str(i)}', random.random()*10, None, 0.5 if i==3 else 0))
 
     tw.plt_loop()
 
@@ -22,7 +22,12 @@ def dynamic_pie():
     v.show()
 
     for _ in range(100):
-        s.write([('label'+str(i), random.random()*10, None, i*0.01) for i in range(12)])
+        s.write(
+            [
+                (f'label{str(i)}', random.random() * 10, None, i * 0.01)
+                for i in range(12)
+            ]
+        )
         tw.plt_loop(count=3)
 
 #static_pie()

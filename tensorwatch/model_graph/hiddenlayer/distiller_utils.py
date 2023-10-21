@@ -61,14 +61,14 @@ def size2str(torch_size):
         return size_to_str(torch_size.size())
     if isinstance(torch_size, torch.autograd.Variable):
         return size_to_str(torch_size.data.size())
-    if isinstance(torch_size, tuple) or isinstance(torch_size, list):
+    if isinstance(torch_size, (tuple, list)):
         return size_to_str(torch_size)
     raise TypeError
 
 
 def size_to_str(torch_size):
     """Convert a pytorch Size object to a string"""
-    assert isinstance(torch_size, torch.Size) or isinstance(torch_size, tuple) or isinstance(torch_size, list)
+    assert isinstance(torch_size, (torch.Size, tuple, list))
     return '('+(', ').join(['%d' % v for v in torch_size])+')'
 
 
@@ -113,10 +113,15 @@ def find_module_by_fq_name(model, fq_mod_name):
     Returns:
         The module or None, if the module was not found.
     """
-    for module in model.modules():
-        if hasattr(module, 'distiller_name') and fq_mod_name == module.distiller_name:
-            return module
-    return None
+    return next(
+        (
+            module
+            for module in model.modules()
+            if hasattr(module, 'distiller_name')
+            and fq_mod_name == module.distiller_name
+        ),
+        None,
+    )
 
 
 def normalize_module_name(layer_name):
@@ -142,9 +147,11 @@ def denormalize_module_name(parallel_model, normalized_name):
     """Convert back from the normalized form of the layer name, to PyTorch's name
     which contains "artifacts" if DataParallel is used.
     """
-    fully_qualified_name = [mod_name for mod_name, _ in parallel_model.named_modules() if
-                            normalize_module_name(mod_name) == normalized_name]
-    if len(fully_qualified_name) > 0:
+    if fully_qualified_name := [
+        mod_name
+        for mod_name, _ in parallel_model.named_modules()
+        if normalize_module_name(mod_name) == normalized_name
+    ]:
         return fully_qualified_name[-1]
     else:
         return normalized_name   # Did not find a module with the name <normalized_name>
@@ -152,9 +159,9 @@ def denormalize_module_name(parallel_model, normalized_name):
 
 def volume(tensor):
     """return the volume of a pytorch tensor"""
-    if isinstance(tensor, torch.FloatTensor) or isinstance(tensor, torch.cuda.FloatTensor):
+    if isinstance(tensor, (torch.FloatTensor, torch.cuda.FloatTensor)):
         return np.prod(tensor.shape)
-    if isinstance(tensor, tuple) or isinstance(tensor, list):
+    if isinstance(tensor, (tuple, list)):
         return np.prod(tensor)
     raise ValueError
 
@@ -255,8 +262,7 @@ def non_zero_channels(tensor):
         raise ValueError("Expecting a 4D tensor")
 
     norms = distiller.norms.channels_lp_norm(tensor, p=1)
-    nonzero_channels = torch.nonzero(norms)
-    return nonzero_channels
+    return torch.nonzero(norms)
 
 
 def sparsity_ch(tensor):
@@ -331,9 +337,7 @@ def sparsity_cols(tensor, transposed=True):
     In other words the matrices are stored in memory transposed.  So by default we compute
     the sparsity of the transposed dimension.
     """
-    if transposed:
-        return sparsity_matrix(tensor, 0)
-    return sparsity_matrix(tensor, 1)
+    return sparsity_matrix(tensor, 0) if transposed else sparsity_matrix(tensor, 1)
 
 
 def density_cols(tensor, transposed=True):
@@ -348,9 +352,7 @@ def sparsity_rows(tensor, transposed=True):
     In other words the matrices are stored in memory transposed.  So by default we compute
     the sparsity of the transposed dimension.
     """
-    if transposed:
-        return sparsity_matrix(tensor, 1)
-    return sparsity_matrix(tensor, 0)
+    return sparsity_matrix(tensor, 1) if transposed else sparsity_matrix(tensor, 0)
 
 
 def density_rows(tensor, transposed=True):
@@ -396,12 +398,12 @@ def norm_filters(weights, p=1):
 
 def model_numel(model, param_dims=[2, 4], param_types=['weight', 'bias']):
     """Count the number elements in a model's parameter tensors"""
-    total_numel = 0
-    for name, param in model.state_dict().items():
-        # Extract just the actual parameter's name, which in this context we treat as its "type"
-        if param.dim() in param_dims and any(type in name for type in param_types):
-            total_numel += torch.numel(param)
-    return total_numel
+    return sum(
+        torch.numel(param)
+        for name, param in model.state_dict().items()
+        if param.dim() in param_dims
+        and any(type in name for type in param_types)
+    )
 
 
 def activation_channels_l1(activation):

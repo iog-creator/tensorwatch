@@ -37,8 +37,12 @@ class WatcherClient(WatcherBase):
             self._clisrv = ZmqWrapper.ClientServer(port=DefaultPorts.CliSrv+self.port, 
                 is_server=False)
             # create subscription where we will receive server management events
-            self._zmq_srvmgmt_sub = ZmqMgmtStream(clisrv=self._clisrv, for_write=False, port=self.port,
-                stream_name='zmq_srvmgmt_sub:'+str(self.port)+':False')
+            self._zmq_srvmgmt_sub = ZmqMgmtStream(
+                clisrv=self._clisrv,
+                for_write=False,
+                port=self.port,
+                stream_name=f'zmq_srvmgmt_sub:{str(self.port)}:False',
+            )
     
     def close(self):
         if not self.closed:
@@ -47,36 +51,41 @@ class WatcherClient(WatcherBase):
             utils.debug_log("WatcherClient is closed", verbosity=1)
         super(WatcherClient, self).close()
 
-    def devices_or_default(self, devices:Sequence[str])->Sequence[str]: # overridden
+    def devices_or_default(self, devices:Sequence[str]) -> Sequence[str]: # overridden
         # TODO: this method is duplicated in Watcher and WatcherClient
 
         # make sure TCP port is attached to tcp device
         if devices is not None:
-            return ['tcp:' + str(self.port) if device=='tcp' else device for device in devices]
+            return [
+                f'tcp:{str(self.port)}' if device == 'tcp' else device
+                for device in devices
+            ]
 
         # if no devices specified then use our filename and tcp:port as default devices
         devices = []
-        # first open file device because it may have older data 
+        # first open file device because it may have older data
         if self.filename is not None:
-            devices.append('file:' + self.filename)
+            devices.append(f'file:{self.filename}')
         if self.port is not None:
-            devices.append('tcp:' + str(self.port))
+            devices.append(f'tcp:{str(self.port)}')
         return devices
 
     # override to send request to server, instead of underlying WatcherBase base class
     def create_stream(self, name:str=None, devices:Sequence[str]=None, event_name:str='',
-        expr=None, throttle:float=1, vis_args:VisArgs=None)->Stream: # overriden
+        expr=None, throttle:float=1, vis_args:VisArgs=None) -> Stream: # overriden
 
         stream_req = StreamCreateRequest(stream_name=name, devices=self.devices_or_default(devices),
             event_name=event_name, expr=expr, throttle=throttle, vis_args=vis_args)
 
         self._zmq_srvmgmt_sub.add_stream_req(stream_req)
 
-        if stream_req.devices is not None:
-            stream = self.open_stream(name=stream_req.stream_name, devices=stream_req.devices)
-        else: # we cannot return remote streams that are not backed by a device
-            stream = None
-        return stream
+        return (
+            self.open_stream(
+                name=stream_req.stream_name, devices=stream_req.devices
+            )
+            if stream_req.devices is not None
+            else None
+        )
 
     # override to set devices default to tcp
     def open_stream(self, name:str=None, devices:Sequence[str]=None)->Stream: # overriden

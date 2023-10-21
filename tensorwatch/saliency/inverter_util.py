@@ -58,11 +58,12 @@ class RelevancePropagator:
         self.p = lrp_exponent
         self.beta = beta
         self.eps = epsilon
-        self.warned_log_softmax = False
         self.module_list = []
+        self.warned_log_softmax = False
         if method not in self.available_methods:
-            raise NotImplementedError("Only methods available are: " +
-                                      str(self.available_methods))
+            raise NotImplementedError(
+                f"Only methods available are: {str(self.available_methods)}"
+            )
         self.method = method
 
     def reset_module_list(self):
@@ -291,7 +292,7 @@ class RelevancePropagator:
 
             # Double number of output channels for positive and negative norm per
             # channel.
-            norm_shape[1] = norm_shape[1] // 2
+            norm_shape[1] //= 2
             new_norm = torch.zeros(norm_shape).to(self.device)
             new_norm[:, :out_c] = norm[:, :out_c] + norm[:, out_c:2 * out_c]
             new_norm[:, out_c:] = norm[:, 2 * out_c:3 * out_c] + norm[:, 3 * out_c:]
@@ -344,7 +345,7 @@ class RelevancePropagator:
             relevance_out = F.conv1d(relevance_out[:, :, None], weight=sum_weights, bias=None)
 
             del sum_weights, input_relevance, norm, rare_neurons, \
-                mask, new_norm, m.in_tensor, w, inv_w
+                    mask, new_norm, m.in_tensor, w, inv_w
 
             return relevance_out
 

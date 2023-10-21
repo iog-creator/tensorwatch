@@ -23,9 +23,7 @@ class ModelStats(LayerStats):
             model = copy.deepcopy(model)
         collected_nodes = analyzer.analyze(model, input_shape, 1)
         self.layer_stats = []
-        for node in collected_nodes:
-            self.layer_stats.append(LayerStats(node))
-
+        self.layer_stats.extend(LayerStats(node) for node in collected_nodes)
         self.name = 'Model'
         self.input_shape = input_shape
         self.output_shape = self.layer_stats[-1].output_shape
@@ -45,13 +43,13 @@ def _round_value(value, binary=False):
     divisor = 1024. if binary else 1000.
 
     if value // divisor**4 > 0:
-        return str(round(value / divisor**4, 2)) + 'T'
+        return f'{str(round(value / divisor**4, 2))}T'
     elif value // divisor**3 > 0:
-        return str(round(value / divisor**3, 2)) + 'G'
+        return f'{str(round(value / divisor**3, 2))}G'
     elif value // divisor**2 > 0:
-        return str(round(value / divisor**2, 2)) + 'M'
+        return f'{str(round(value / divisor**2, 2))}M'
     elif value // divisor > 0:
-        return str(round(value / divisor, 2)) + 'K'
+        return f'{str(round(value / divisor, 2))}K'
     return str(value)
 
 

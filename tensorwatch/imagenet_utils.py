@@ -6,13 +6,13 @@ from . import pytorch_utils
 import json, os
 
 def get_image_transform():
-    transf = transforms.Compose([ #TODO: cache these transforms?
-        get_resize_transform(),
-        transforms.ToTensor(),
-        get_normalize_transform()
-    ])    
-
-    return transf
+    return transforms.Compose(
+        [  # TODO: cache these transforms?
+            get_resize_transform(),
+            transforms.ToTensor(),
+            get_normalize_transform(),
+        ]
+    )
 
 def get_resize_transform(): 
     return transforms.Resize((224, 224))
@@ -27,8 +27,7 @@ def image2batch(image):
 def predict(model, images, image_transform=None, device=None):
     logits = pytorch_utils.batch_predict(model, images, 
                                          input_transform=image_transform or get_image_transform(), device=device)
-    probs = pytorch_utils.logits2probabilities(logits) #2-dim array, one column per class, one row per input
-    return probs
+    return pytorch_utils.logits2probabilities(logits)
 
 _imagenet_labels = None
 def get_imagenet_labels():

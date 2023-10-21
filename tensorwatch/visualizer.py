@@ -30,7 +30,7 @@ class Visualizer:
             # pie chart
             autopct=None, shadow=None,
 
-            vis_args={}, stream_vis_args={})->None:
+            vis_args={}, stream_vis_args={}) -> None:
 
         cell = cell._host_base.cell if cell is not None else None
 
@@ -41,18 +41,46 @@ class Visualizer:
                                    cell_width=cell_width, cell_height=cell_height,
                                    **vis_args)
 
-        self._host_base.subscribe(stream, show=False, clear_after_end=clear_after_end, clear_after_each=clear_after_each,
-            history_len=history_len, dim_history=dim_history, opacity=opacity,
-            only_summary=only_summary if vis_type is None or 'summary' != vis_type else True,
-            separate_yaxis=separate_yaxis, xtitle=xtitle, ytitle=ytitle, ztitle=ztitle, color=color,
-            xrange=xrange, yrange=yrange, zrange=zrange,
-            draw_line=draw_line if vis_type is not None and 'scatter' in vis_type else True,
+        self._host_base.subscribe(
+            stream,
+            show=False,
+            clear_after_end=clear_after_end,
+            clear_after_each=clear_after_each,
+            history_len=history_len,
+            dim_history=dim_history,
+            opacity=opacity,
+            only_summary=only_summary
+            if vis_type is None or vis_type != 'summary'
+            else True,
+            separate_yaxis=separate_yaxis,
+            xtitle=xtitle,
+            ytitle=ytitle,
+            ztitle=ztitle,
+            color=color,
+            xrange=xrange,
+            yrange=yrange,
+            zrange=zrange,
+            draw_line=draw_line
+            if vis_type is not None and 'scatter' in vis_type
+            else True,
             draw_marker=draw_marker,
-            rows=rows, cols=cols, img_width=img_width, img_height=img_height, img_channels=img_channels,
-            colormap=colormap, viz_img_scale=viz_img_scale,
-            bins=bins, normed=normed, histtype=histtype, edge_color=edge_color, linewidth=linewidth, bar_width = bar_width,
-            autopct=autopct, shadow=shadow,
-            **stream_vis_args)
+            rows=rows,
+            cols=cols,
+            img_width=img_width,
+            img_height=img_height,
+            img_channels=img_channels,
+            colormap=colormap,
+            viz_img_scale=viz_img_scale,
+            bins=bins,
+            normed=normed,
+            histtype=histtype,
+            edge_color=edge_color,
+            linewidth=linewidth,
+            bar_width=bar_width,
+            autopct=autopct,
+            shadow=shadow,
+            **stream_vis_args
+        )
 
         stream.load()
 
@@ -62,7 +90,7 @@ class Visualizer:
     def save(self, filepath:str)->None:
         self._host_base.save(filepath)
 
-    def _get_vis_base(self, vis_type, cell:VisBase.widgets.Box, title, hover_images=None, hover_image_reshape=None, cell_width=None, cell_height=None, **vis_args)->VisBase:
+    def _get_vis_base(self, vis_type, cell:VisBase.widgets.Box, title, hover_images=None, hover_image_reshape=None, cell_width=None, cell_height=None, **vis_args) -> VisBase:
         if vis_type is None or vis_type in ['line',
                         'mpl-line', 'mpl-line3d', 'mpl-scatter3d', 'mpl-scatter']:
             return mpl.line_plot.LinePlot(cell=cell, title=title, cell_width=cell_width, cell_height=cell_height,
@@ -88,4 +116,4 @@ class Visualizer:
                                          is_3d='2d' not in vis_type,
                                          hover_images=hover_images, hover_image_reshape=hover_image_reshape, **vis_args)
         else:
-            raise ValueError('Render vis_type parameter has invalid value: "{}"'.format(vis_type))
+            raise ValueError(f'Render vis_type parameter has invalid value: "{vis_type}"')

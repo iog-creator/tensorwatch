@@ -10,7 +10,7 @@ class LinePlot(BasePlotlyPlot):
         # handle multiple y axis
         yaxis = 'yaxis' + (str(stream_vis.index + 1) if stream_vis.separate_yaxis else '')
 
-        xaxis = 'xaxis' + str(stream_vis.index+1)
+        xaxis = f'xaxis{str(stream_vis.index + 1)}'
         axis_props = BasePlotlyPlot._get_axis_common_props(stream_vis.xtitle, stream_vis.xrange)
         #axis_props['rangeslider'] = dict(visible = True)
         self.widget.layout[xaxis] = axis_props
@@ -42,16 +42,30 @@ class LinePlot(BasePlotlyPlot):
 
         yaxis = 'y' + (str(stream_vis.index + 1) if stream_vis.separate_yaxis else '')
 
-        trace = go.Scatter(x=[], y=[], mode=mode, name=stream_vis.title or stream_vis.ytitle, yaxis=yaxis, hoverinfo=hoverinfo,
-                           line=line, marker=marker)
-        return trace
+        return go.Scatter(
+            x=[],
+            y=[],
+            mode=mode,
+            name=stream_vis.title or stream_vis.ytitle,
+            yaxis=yaxis,
+            hoverinfo=hoverinfo,
+            line=line,
+            marker=marker,
+        )
 
     def _create_3d_trace(self, stream_vis, mode, hoverinfo, marker, line):
         import plotly.graph_objs as go # function-level import as this takes long time
 
-        trace = go.Scatter3d(x=[], y=[], z=[], mode=mode, name=stream_vis.title or stream_vis.ytitle, hoverinfo=hoverinfo,
-                           line=line, marker=marker)
-        return trace
+        return go.Scatter3d(
+            x=[],
+            y=[],
+            z=[],
+            mode=mode,
+            name=stream_vis.title or stream_vis.ytitle,
+            hoverinfo=hoverinfo,
+            line=line,
+            marker=marker,
+        )
 
 
     def _create_trace(self, stream_vis):
@@ -70,12 +84,12 @@ class LinePlot(BasePlotlyPlot):
         marker = stream_vis.stream_vis_args.get('marker',{})
         line = stream_vis.stream_vis_args.get('line',{})
         utils.set_default(line, 'color', stream_vis.color or BasePlotlyPlot.get_pallet_color(stream_vis.index))
-        
+
         mode = 'lines' if draw_line else ''
         if draw_marker:
-            mode = ('' if mode=='' else mode+'+') + 'markers'
+            mode = ('' if not mode else f'{mode}+') + 'markers'
         if draw_marker_text:
-            mode = ('' if mode=='' else mode+'+') + 'text'
+            mode = ('' if not mode else f'{mode}+') + 'text'
 
         if self.is_3d:
             return self._create_3d_trace(stream_vis, mode, hoverinfo, marker, line)  

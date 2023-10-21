@@ -58,14 +58,13 @@ class VisBase(Stream, metaclass=ABCMeta):
 
     def show(self, blocking:bool=False):
         self.is_shown = True
-        if VisBase.get_ipython():
-            if self._use_hbox:
-                VisBase.display.display(self.cell) # this method doesn't need returns
-                #return self.cell
-            else:
-                return self._show_widget_notebook()
-        else:
+        if not VisBase.get_ipython():
             return self._show_widget_native(blocking)
+        if self._use_hbox:
+            VisBase.display.display(self.cell) # this method doesn't need returns
+            #return self.cell
+        else:
+            return self._show_widget_notebook()
 
     def save(self, filepath:str)->None:
         self._save_widget(filepath)
@@ -91,7 +90,7 @@ class VisBase(Stream, metaclass=ABCMeta):
             #if stream_vis is None:
             #    utils.debug_log('stream_vis not specified in VisBase.write')
             #    stream_vis = next(iter(vis._stream_vises.values())) # use first as default
-            utils.debug_log("Stream received: {}".format(stream_item.stream_name), verbosity=5)
+            utils.debug_log(f"Stream received: {stream_item.stream_name}", verbosity=5)
             stream_vis._pending_items.put(stream_item)
 
         # if we accumulated enough of pending items then let's process them
@@ -129,9 +128,7 @@ class VisBase(Stream, metaclass=ABCMeta):
     def _extract_vals(self, stream_items):
         vals = []
         for stream_item in stream_items:
-            if stream_item.ended or stream_item.value is None:
-                pass # no values to add
-            else:
+            if not stream_item.ended and stream_item.value is not None:
                 if utils.is_array_like(stream_item.value, tuple_is_array=False):
                     vals.extend(stream_item.value)
                 else:

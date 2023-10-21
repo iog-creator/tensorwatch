@@ -49,12 +49,12 @@ class BarPlot(BaseMplPlot):
         stream_vis.series.clear()
         self.clear_artists(stream_vis)
 
-    def _val2tuple(val, x)->tuple:
+    def _val2tuple(self, x) -> tuple:
         """Accept scaler val, (y,), (x, y), (label, y), (x, y, label), return (x, y, z, color, label)
         """
-        if utils.is_array_like(val):
+        if utils.is_array_like(self):
             unpacker = lambda a0=None,a1=None,a2=None,*_:(a0,a1,a2)
-            t = unpacker(*val)
+            t = unpacker(*self)
             if len(t) == 1: # (y,)
                 t = (x, t[0], 0, None, None)
             elif len(t) == 2:
@@ -63,9 +63,9 @@ class BarPlot(BaseMplPlot):
                 t = (t[0], t[1], None, t[2]) if isinstance(t[2], str) else t + (None, None)
             elif len(t) == 4: # we assume (x, y, z, color)
                 t += (None,) 
-            # else leave it alone
+                # else leave it alone
         else: # scaler
-            t = (x, val, 0, None, None)
+            t = x, self, 0, None, None
 
         return t
 

@@ -41,7 +41,7 @@ def _get_explainer(explainer_name, model, layer_path=None):
     if explainer_name == 'lime_imagenet':
         return LimeImagenetExplainer(model)
 
-    raise ValueError('Explainer {} is not recognized'.format(explainer_name))
+    raise ValueError(f'Explainer {explainer_name} is not recognized')
 
 def _get_layer_path(model):
     if model.__class__.__name__ == 'VGG':
@@ -56,7 +56,7 @@ def _get_layer_path(model):
         return None
 
 def get_saliency(model, raw_input, input, label, device=None, method='integrate_grad', layer_path=None):
-    if device == None or type(device) != torch.device:
+    if device is None or type(device) != torch.device:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model.to(device)
@@ -75,14 +75,13 @@ def get_saliency(model, raw_input, input, label, device=None, method='integrate_
     exp = _get_explainer(method, model, layer_path)
     saliency = exp.explain(input, label, raw_input)
 
-    if saliency is not None:
-        saliency = saliency.abs().sum(dim=1)[0].squeeze()
-        saliency -= saliency.min()
-        saliency /= (saliency.max() + 1e-20)
-
-        return saliency.detach().cpu().numpy()
-    else:
+    if saliency is None:
         return None
+    saliency = saliency.abs().sum(dim=1)[0].squeeze()
+    saliency -= saliency.min()
+    saliency /= (saliency.max() + 1e-20)
+
+    return saliency.detach().cpu().numpy()
 
 def get_image_saliency_results(model, raw_image, input, label,
                                device=None,

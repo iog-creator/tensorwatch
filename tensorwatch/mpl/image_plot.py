@@ -23,8 +23,7 @@ class ImagePlot(BaseMplPlot):
     def clear_plot(self, stream_vis, clear_history):
         for row in range(stream_vis.rows):
             for col in range(stream_vis.cols):
-                img = stream_vis.ax_imgs[row][col]
-                if img:
+                if img := stream_vis.ax_imgs[row][col]:
                     x, y = img.get_size()
                     img.set_data(np.zeros((x, y)))
 
@@ -32,12 +31,14 @@ class ImagePlot(BaseMplPlot):
         """Paint the given stream_items in to visualizer. If visualizer is dirty then return False else True.
         """
 
-        # as we repaint each image plot, select last if multiple events were pending
-        stream_item = None
-        for er in reversed(stream_items):
-            if not(er.ended or er.value is None):
-                stream_item = er
-                break
+        stream_item = next(
+            (
+                er
+                for er in reversed(stream_items)
+                if not (er.ended or er.value is None)
+            ),
+            None,
+        )
         if stream_item is None:
             return True
 
@@ -47,7 +48,7 @@ class ImagePlot(BaseMplPlot):
         for image_list in stream_item.value:
             # convert to imshow compatible, stitch images
             images = [image_utils.to_imshow_array(img, stream_vis.img_width, stream_vis.img_height) \
-                for img in image_list.images if img is not None]
+                    for img in image_list.images if img is not None]
             img_viz = image_utils.stitch_horizontal(images, width_dim=1)
 
             # resize if requested
@@ -63,12 +64,12 @@ class ImagePlot(BaseMplPlot):
             ax = stream_vis.axs[row][col]
             if ax is None:
                 ax = stream_vis.axs[row][col] = \
-                    self.figure.add_subplot(stream_vis.rows, stream_vis.cols, i+1)
+                        self.figure.add_subplot(stream_vis.rows, stream_vis.cols, i+1)
                 ax.set_xticks([])
                 ax.set_yticks([])  
 
             cmap = image_list.cmap or ('Greys' if stream_vis.colormap is None and \
-                len(img_viz.shape) == 2 else stream_vis.colormap)
+                    len(img_viz.shape) == 2 else stream_vis.colormap)
 
             stream_vis.ax_imgs[row][col] = ax.imshow(img_viz, interpolation="none", cmap=cmap, alpha=image_list.alpha)
             dirty = True

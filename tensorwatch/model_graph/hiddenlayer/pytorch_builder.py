@@ -44,20 +44,17 @@ def pytorch_id(node):
     """Returns a unique ID for a node."""
     # After ONNX simplification, the scopeName is not unique anymore
     # so append node outputs to guarantee uniqueness
-    return node.scopeName() + "/outputs/" + "/".join([o.debugName() for o in node.outputs()])
+    return f"{node.scopeName()}/outputs/" + "/".join(
+        [o.debugName() for o in node.outputs()]
+    )
 
 
 
 def get_shape(torch_node):
     """Return the output shape of the given Pytorch node."""
-    # Extract node output shape from the node string representation
-    # This is a hack because there doesn't seem to be an official way to do it.
-    # See my quesiton in the PyTorch forum:
-    # https://discuss.pytorch.org/t/node-output-shape-from-trace-graph/24351/2
-    # TODO: find a better way to extract output shape
-    # TODO: Assuming the node has one output. Update if we encounter a multi-output node.
-    m = re.match(r".*Float\(([\d\s\,]+)\).*", str(next(torch_node.outputs())))
-    if m:
+    if m := re.match(
+        r".*Float\(([\d\s\,]+)\).*", str(next(torch_node.outputs()))
+    ):
         shape = m.group(1)
         shape = shape.split(",")
         shape = tuple(map(int, shape))
@@ -81,18 +78,16 @@ def calc_rf(model, input_shape):
     grad = torch.zeros(out_shape)
     l_tmp=[]
     for i in xrange(ndims):
-        if i==0 or i==1:#batch or channel
+        if i in [0, 1]:
             l_tmp.append(0)
         else:
             l_tmp.append(out_shape[i]/2)
-            
+
     grad[tuple(l_tmp)] = 1
     output.backward(gradient=grad)
     grad_np = img_.grad[0,0].data.numpy()
     idx_nonzeros = np.where(grad_np!=0)
-    RF=[np.max(idx)-np.min(idx)+1 for idx in idx_nonzeros]
-    
-    return RF
+    return [np.max(idx)-np.min(idx)+1 for idx in idx_nonzeros]
 
 def import_graph(hl_graph, model, args, input_names=None, verbose=False):
     # TODO: add input names to graph
@@ -124,11 +119,11 @@ def import_graph(hl_graph, model, args, input_names=None, verbose=False):
     # Loop through nodes and build HL graph
     nodes = list(torch_graph.nodes())
     inps = [(n, [i.unique() for i in n.inputs()]) for n in nodes]
-    for i, torch_node in enumerate(nodes):
+    for torch_node in nodes:
         # Op
         op = torch_node.kind()
         # Parameters
-        params = {k: torch_node[k] for k in torch_node.attributeNames()} 
+        params = {k: torch_node[k] for k in torch_node.attributeNames()}
         # Inputs/outputs
         # TODO: inputs = [i.unique() for i in node.inputs()]
         outputs = [o.unique() for o in torch_node.outputs()]

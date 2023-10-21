@@ -10,10 +10,12 @@ from typing import List
 from .lv_types import VisArgs
 
 class NotebookMaker:
-    def __init__(self, watcher, filename:str=None)->None:
-        self.filename = filename or \
-            (path.splitext(watcher.filename)[0] + '.ipynb' if watcher.filename else \
-            'tensorwatch.ipynb')
+    def __init__(self, watcher, filename:str=None) -> None:
+        self.filename = filename or (
+            f'{path.splitext(watcher.filename)[0]}.ipynb'
+            if watcher.filename
+            else 'tensorwatch.ipynb'
+        )
 
         self.cells = []
         self._default_vis_args = VisArgs()
@@ -21,35 +23,41 @@ class NotebookMaker:
         watcher_args_str = NotebookMaker._get_vis_args(watcher)
 
         # create initial cell
-        self.cells.append(new_code_cell(source=linesep.join( 
-            ['%matplotlib notebook', 
-             'import tensorwatch as tw',
-             'client = tw.WatcherClient({})'.format(NotebookMaker._get_vis_args(watcher))])))
+        self.cells.append(
+            new_code_cell(
+                source=linesep.join(
+                    [
+                        '%matplotlib notebook',
+                        'import tensorwatch as tw',
+                        f'client = tw.WatcherClient({NotebookMaker._get_vis_args(watcher)})',
+                    ]
+                )
+            )
+        )
 
-    def _get_vis_args(watcher)->str:
+    def _get_vis_args(self) -> str:
         args_strs = []
         for param, default_v in [('port', 0), ('filename', None)]:
-            if hasattr(watcher, param):
-                v = getattr(watcher, param)
+            if hasattr(self, param):
+                v = getattr(self, param)
                 if v==default_v or (v is None and default_v is None):
                     continue
-                args_strs.append("{}={}".format(param, NotebookMaker._val2str(v)))
+                args_strs.append(f"{param}={NotebookMaker._val2str(v)}")
         return ', '.join(args_strs)
 
-    def _get_stream_identifier(prefix, event_name, stream_name, stream_index)->str:
-        if not stream_name or utils.is_uuid4(stream_name):
-            if event_name is not None and event_name != '':
-                return '{}_{}_{}'.format(prefix, event_name, stream_index)
-            else:
-                return prefix + str(stream_index)
+    def _get_stream_identifier(self, event_name, stream_name, stream_index) -> str:
+        if stream_name and not utils.is_uuid4(stream_name):
+            return f'{self}{stream_index}_{utils.str2identifier(stream_name)[:8]}'
+        if event_name is not None and event_name != '':
+            return f'{self}_{event_name}_{stream_index}'
         else:
-            return '{}{}_{}'.format(prefix, stream_index, utils.str2identifier(stream_name)[:8])
+            return self + str(stream_index)
 
-    def _val2str(v)->str:
+    def _val2str(self) -> str:
         # TODO: shall we raise error if non str, bool, number (or its container) parameters?
-        return str(v) if not isinstance(v, str) else "'{}'".format(v)
+        return str(self) if not isinstance(self, str) else f"'{self}'"
 
-    def _add_vis_args_str(self, stream_info, param_strs:List[str])->None:
+    def _add_vis_args_str(self, stream_info, param_strs:List[str]) -> None:
         default_args = self._default_vis_args.__dict__
         if not stream_info.req.vis_args:
             return
@@ -58,19 +66,20 @@ class NotebookMaker:
                 default_v = default_args[k]
                 if (v is None and default_v is None) or (v==default_v):
                     continue # skip param if its value is not changed from default
-                param_strs.append("{}={}".format(k, NotebookMaker._val2str(v)))
+                param_strs.append(f"{k}={NotebookMaker._val2str(v)}")
 
-    def _get_stream_code(self, event_name, stream_name, stream_index, stream_info)->List[str]:
-        lines = []
-
-        stream_identifier = 's'+str(stream_index)
-        lines.append("{} = client.open_stream(name='{}')".format(stream_identifier, stream_name))
-
-        vis_identifier = 'v'+str(stream_index)
-        vis_args_strs = ['stream={}'.format(stream_identifier)]
+    def _get_stream_code(self, event_name, stream_name, stream_index, stream_info) -> List[str]:
+        stream_identifier = f's{str(stream_index)}'
+        lines = [f"{stream_identifier} = client.open_stream(name='{stream_name}')"]
+        vis_identifier = f'v{str(stream_index)}'
+        vis_args_strs = [f'stream={stream_identifier}']
         self._add_vis_args_str(stream_info, vis_args_strs)
-        lines.append("{} = tw.Visualizer({})".format(vis_identifier, ', '.join(vis_args_strs)))
-        lines.append("{}.show()".format(vis_identifier))
+        lines.extend(
+            (
+                f"{vis_identifier} = tw.Visualizer({', '.join(vis_args_strs)})",
+                f"{vis_identifier}.show()",
+            )
+        )
         return lines
 
     def add_streams(self, event_stream_infos)->None:

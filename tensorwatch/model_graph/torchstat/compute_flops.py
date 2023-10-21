@@ -21,7 +21,6 @@ def compute_flops(module, inp, out):
     else:
         #print(f"[Flops]: {type(module).__name__} is not supported!")
         return 0
-    pass
 
 
 def compute_Conv2d_flops(module, inp, out):
@@ -41,12 +40,8 @@ def compute_Conv2d_flops(module, inp, out):
 
     total_conv_flops = conv_per_position_flops * active_elements_count
 
-    bias_flops = 0
-    if module.bias is not None:
-        bias_flops = out_c * active_elements_count
-
-    total_flops = total_conv_flops + bias_flops
-    return total_flops
+    bias_flops = out_c * active_elements_count if module.bias is not None else 0
+    return total_conv_flops + bias_flops
 
 def compute_adaptivepool_flops(module, input, output):
     # credits: https://github.com/xternalz/SDPoint/blob/master/utils/flops.py
@@ -92,10 +87,22 @@ def compute_Pool2d_flops(module, input, out):
     input_planes = input.size(1)
     input_height = input.size(2)
     input_width = input.size(3)
-    kernel_size = ('int' in str(type(module.kernel_size))) and [module.kernel_size, module.kernel_size] or module.kernel_size
+    kernel_size = (
+        [module.kernel_size, module.kernel_size]
+        if 'int' in str(type(module.kernel_size))
+        else module.kernel_size
+    )
     kernel_ops = kernel_size[0] * kernel_size[1]
-    stride = ('int' in str(type(module.stride))) and [module.stride, module.stride] or module.stride
-    padding = ('int' in str(type(module.padding))) and [module.padding, module.padding] or module.padding
+    stride = (
+        [module.stride, module.stride]
+        if 'int' in str(type(module.stride))
+        else module.stride
+    )
+    padding = (
+        [module.padding, module.padding]
+        if 'int' in str(type(module.padding))
+        else module.padding
+    )
 
     output_width = math.floor((input_width + 2 * padding[0] - kernel_size[0]) / float(stride[0]) + 1)
     output_height = math.floor((input_height + 2 * padding[1] - kernel_size[1]) / float(stride[0]) + 1)

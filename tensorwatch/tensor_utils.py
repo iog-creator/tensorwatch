@@ -43,54 +43,51 @@ def tensor2np(item:Any)->np.ndarray:
     else: # numeric and everything else, let np take care
         return np.array(item)
 
-def to_scaler_list(l:Sized)->List[numbers.Number]:
+def to_scaler_list(l:Sized) -> List[numbers.Number]:
     """Create list of scalers for given list of tensors where each element is 0-dim tensor
     """
-    if l is not None and len(l):
-        tt = tensor_type(l[0])
-        if tt == TensorType.Torch or tt == TensorType.Numpy:
-            return [i.item() for i in l]
-        elif tt == TensorType.TF:
-            return [i.numpy().item() for i in l]
-        elif tt == TensorType.Numeric:
-            # convert to list in case l is not list type
-            return [i for i in l]
-        else:
-            raise ValueError('Cannot convert tensor list to scaler list \
-because list element are of unsupported type ' + tt)
-    else:
+    if l is None or not len(l):
         return None if l is None else [] # make sure we always return list type
-
-def to_mean_list(l:Sized)->List[float]:
-    """Create list of scalers for given list of tensors where each element is 0-dim tensor
-    """
-    if l is not None and len(l):
-        tt = tensor_type(l[0])
-        if tt == TensorType.Torch or tt == TensorType.Numpy:
-            return [i.mean() for i in l]
-        elif tt == TensorType.TF:
-            return [i.numpy().mean() for i in l]
-        elif tt == TensorType.Numeric:
+    tt = tensor_type(l[0])
+    if tt in [TensorType.Torch, TensorType.Numpy]:
+        return [i.item() for i in l]
+    elif tt == TensorType.TF:
+        return [i.numpy().item() for i in l]
+    elif tt == TensorType.Numeric:
             # convert to list in case l is not list type
-            return [float(i) for i in l]
-        else:
-            raise ValueError('Cannot convert tensor list to scaler list \
-because list element are of unsupported type ' + tt)
+        return list(l)
     else:
-        return None if l is None else []
-
-def to_np_list(l:Sized)->List[np.ndarray]:
-    if l is not None and len(l):
-        tt = tensor_type(l[0])
-        if tt == TensorType.Numeric:
-            return [np.array(i) for i in l]
-        if tt == TensorType.TF:
-            return [i.numpy() for i in l]
-        if tt == TensorType.Torch:
-            return [i.data.cpu().numpy() for i in l]
-        if tt == TensorType.Numpy:
-            return [i for i in l]
         raise ValueError('Cannot convert tensor list to scaler list \
 because list element are of unsupported type ' + tt)
-    else:
+
+def to_mean_list(l:Sized) -> List[float]:
+    """Create list of scalers for given list of tensors where each element is 0-dim tensor
+    """
+    if l is None or not len(l):
         return None if l is None else []
+    tt = tensor_type(l[0])
+    if tt in [TensorType.Torch, TensorType.Numpy]:
+        return [i.mean() for i in l]
+    elif tt == TensorType.TF:
+        return [i.numpy().mean() for i in l]
+    elif tt == TensorType.Numeric:
+        # convert to list in case l is not list type
+        return [float(i) for i in l]
+    else:
+        raise ValueError('Cannot convert tensor list to scaler list \
+because list element are of unsupported type ' + tt)
+
+def to_np_list(l:Sized) -> List[np.ndarray]:
+    if l is None or not len(l):
+        return None if l is None else []
+    tt = tensor_type(l[0])
+    if tt == TensorType.Numeric:
+        return [np.array(i) for i in l]
+    if tt == TensorType.TF:
+        return [i.numpy() for i in l]
+    if tt == TensorType.Torch:
+        return [i.data.cpu().numpy() for i in l]
+    if tt == TensorType.Numpy:
+        return list(l)
+    raise ValueError('Cannot convert tensor list to scaler list \
+because list element are of unsupported type ' + tt)

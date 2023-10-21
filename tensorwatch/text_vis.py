@@ -15,10 +15,10 @@ class TextVis(VisBase):
         self.SeriesClass = pd.Series
 
     def _get_column_prefix(self, stream_vis, i):
-        return '[S.{}]:{}'.format(stream_vis.index, i)
+        return f'[S.{stream_vis.index}]:{i}'
 
     def _get_title(self, stream_vis):
-        title = stream_vis.title or 'Stream ' + str(len(self._stream_vises))
+        title = stream_vis.title or f'Stream {len(self._stream_vises)}'
         return title
 
     # this will be called from _show_stream_items
@@ -32,9 +32,10 @@ class TextVis(VisBase):
                 self.df = self.df.append(self.SeriesClass({self._get_column_prefix(stream_vis, 0) : val}), 
                                           sort=False, ignore_index=True)
             elif utils.is_array_like(val):
-                val_dict = {}
-                for i,val_i in enumerate(val):
-                    val_dict[self._get_column_prefix(stream_vis, i)] = val_i
+                val_dict = {
+                    self._get_column_prefix(stream_vis, i): val_i
+                    for i, val_i in enumerate(val)
+                }
                 self.df = self.df.append(self.SeriesClass(val_dict), sort=False, ignore_index=True)
             else:
                 self.df = self.df.append(self.SeriesClass(val.__dict__), sort=False, ignore_index=True)
@@ -45,7 +46,7 @@ class TextVis(VisBase):
         stream_vis.only_summary = only_summary
 
     def clear_plot(self, stream_vis, clear_history):
-        self.df = self.df.iloc[0:0]
+        self.df = self.df.iloc[:0]
 
     def _show_stream_items(self, stream_vis, stream_items):
         """Paint the given stream_items in to visualizer. If visualizer is dirty then return False else True.

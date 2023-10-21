@@ -14,7 +14,7 @@ def has_arg(fn, arg_name):
         bool, whether `fn` accepts a `arg_name` keyword argument.
     """
     if sys.version_info < (3,):
-        if isinstance(fn, types.FunctionType) or isinstance(fn, types.MethodType):
+        if isinstance(fn, (types.FunctionType, types.MethodType)):
             arg_spec = inspect.getargspec(fn)
         else:
             try:

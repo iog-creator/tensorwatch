@@ -34,9 +34,11 @@ class StreamFactory:
     def __exit__(self, exception_type, exception_value, traceback):
         self.close()
 
-    def get_streams(self, stream_types:Sequence[str], for_write:bool=None)->List[Stream]:
-        streams = [self._create_stream_by_string(stream_type, for_write) for stream_type in stream_types]
-        return streams
+    def get_streams(self, stream_types:Sequence[str], for_write:bool=None) -> List[Stream]:
+        return [
+            self._create_stream_by_string(stream_type, for_write)
+            for stream_type in stream_types
+        ]
 
     def get_combined_stream(self, stream_types:Sequence[str], for_write:bool=None)->Stream:
         streams = [self._create_stream_by_string(stream_type, for_write) for stream_type in stream_types]
@@ -46,10 +48,10 @@ class StreamFactory:
             # we create new union of child but this is not necessory
             return StreamUnion(streams, for_write=for_write)
 
-    def _get_stream_name(stream_type:str, stream_args:Any, for_write:bool)->str:
-        return '{}:{}:{}'.format(stream_type, stream_args, for_write)
+    def _get_stream_name(self, stream_args:Any, for_write:bool) -> str:
+        return f'{self}:{stream_args}:{for_write}'
 
-    def _create_stream_by_string(self, stream_spec:str, for_write:bool)->Stream:
+    def _create_stream_by_string(self, stream_spec:str, for_write:bool) -> Stream:
         parts = stream_spec.split(':', 1) if stream_spec is not None else ['']
         stream_type = parts[0]
         stream_args = parts[1] if len(parts) > 1 else None
@@ -80,12 +82,11 @@ class StreamFactory:
             # each read only file stream should be separate stream or otheriwse sharing will
             # change seek positions
             if not for_write: 
-                stream_name += ':' + str(uuid.uuid4())
+                stream_name += f':{str(uuid.uuid4())}'
 
                 # if write file exist then flush it before read stream would read it
                 write_stream_name = StreamFactory._get_stream_name(stream_type, stream_args, True)
-                write_file_stream = self._streams.get(write_stream_name, None)
-                if write_file_stream:
+                if write_file_stream := self._streams.get(write_stream_name, None):
                     write_file_stream.save()
             if stream_name not in self._streams:
                 self._streams[stream_name] = FileStream(for_write=for_write, 
@@ -96,6 +97,6 @@ class StreamFactory:
         if stream_type == '':
             return Stream()
 
-        raise ValueError('stream_type "{}" has unknown type'.format(stream_type))
+        raise ValueError(f'stream_type "{stream_type}" has unknown type')
 
 

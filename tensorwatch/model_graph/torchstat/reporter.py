@@ -10,29 +10,31 @@ def round_value(value, binary=False):
     divisor = 1024. if binary else 1000.
 
     if value // divisor**4 > 0:
-        return str(round(value / divisor**4, 2)) + 'T'
+        return f'{str(round(value / divisor**4, 2))}T'
     elif value // divisor**3 > 0:
-        return str(round(value / divisor**3, 2)) + 'G'
+        return f'{str(round(value / divisor**3, 2))}G'
     elif value // divisor**2 > 0:
-        return str(round(value / divisor**2, 2)) + 'M'
+        return f'{str(round(value / divisor**2, 2))}M'
     elif value // divisor > 0:
-        return str(round(value / divisor, 2)) + 'K'
+        return f'{str(round(value / divisor, 2))}K'
     return str(value)
 
 
 def report_format(collected_nodes):
-    data = list()
+    data = []
     for node in collected_nodes:
         name = node.name
         input_shape = ' '.join(['{:>3d}'] * len(node.input_shape)).format(
-            *[e for e in node.input_shape])
+            *list(node.input_shape)
+        )
         output_shape = ' '.join(['{:>3d}'] * len(node.output_shape)).format(
-            *[e for e in node.output_shape])
+            *list(node.output_shape)
+        )
         parameter_quantity = node.parameter_quantity
         inference_memory = node.inference_memory
         MAdd = node.MAdd
         Flops = node.Flops
-        mread, mwrite = [i for i in node.Memory]
+        mread, mwrite = list(node.Memory)
         duration = node.duration
         data.append([name, input_shape, output_shape, parameter_quantity,
                      inference_memory, MAdd, duration, Flops, mread,
@@ -77,7 +79,7 @@ def report_format(collected_nodes):
     summary += "-" * len(str(df).split('\n')[0])
     summary += '\n'
     summary += "Total memory: {:.2f}MB\n".format(total_memory)
-    summary += "Total MAdd: {}MAdd\n".format(round_value(total_operation_quantity))
-    summary += "Total Flops: {}Flops\n".format(round_value(total_flops))
-    summary += "Total MemR+W: {}B\n".format(round_value(total_memrw, True))
+    summary += f"Total MAdd: {round_value(total_operation_quantity)}MAdd\n"
+    summary += f"Total Flops: {round_value(total_flops)}Flops\n"
+    summary += f"Total MemR+W: {round_value(total_memrw, True)}B\n"
     return summary

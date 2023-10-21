@@ -30,10 +30,14 @@ def model_find_param_name(model, param_to_find):
     Returns:
         The parameter name (string) or None, if the parameter was not found.
     """
-    for name, param  in model.named_parameters():
-        if param is param_to_find:
-            return name
-    return None
+    return next(
+        (
+            name
+            for name, param in model.named_parameters()
+            if param is param_to_find
+        ),
+        None,
+    )
 
 
 def model_find_module_name(model, module_to_find):
@@ -46,10 +50,10 @@ def model_find_module_name(model, module_to_find):
     Returns:
         The module name (string) or None, if the module was not found.
     """
-    for name, m in model.named_modules():
-        if m == module_to_find:
-            return name
-    return None
+    return next(
+        (name for name, m in model.named_modules() if m == module_to_find),
+        None,
+    )
 
 
 def model_find_param(model, param_to_find_name):
@@ -62,10 +66,14 @@ def model_find_param(model, param_to_find_name):
     Returns:
         The parameter or None, if the paramter name was not found.
     """
-    for name, param in model.named_parameters():
-        if name == param_to_find_name:
-            return param
-    return None
+    return next(
+        (
+            param
+            for name, param in model.named_parameters()
+            if name == param_to_find_name
+        ),
+        None,
+    )
 
 
 def model_find_module(model, module_to_find):
@@ -78,8 +86,8 @@ def model_find_module(model, module_to_find):
     Returns:
         The module or None, if the module was not found.
     """
-    for name, m in model.named_modules():
-        if name == module_to_find:
-            return m
-    return None
+    return next(
+        (m for name, m in model.named_modules() if name == module_to_find),
+        None,
+    )
 

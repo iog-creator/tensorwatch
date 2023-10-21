@@ -21,7 +21,7 @@ class OcclusionExplainer:
     def _occlusion(inp, model, window_shape, step=None):
         if type(window_shape) == int:
             window_shape = (window_shape, window_shape, 3)
-        
+
         if step is None:
             step = 1
         n, c, h, w = inp.data.size()
@@ -31,13 +31,13 @@ class OcclusionExplainer:
             (-1,) + window_shape)
         heatmap = np.zeros((n, h, w, c), dtype=np.float32).reshape((-1), total_dim)
         weights = np.zeros_like(heatmap)
-    
+
         inp_data = inp.data.clone()
         new_inp = Variable(inp_data)
         eval0 = model(new_inp)
         pred_id = eval0.max(1)[1].data[0]
-    
-        for i, p in enumerate(idx_patches):
+
+        for p in idx_patches:
             mask = np.ones((h, w, c)).flatten()
             mask[p.flatten()] = 0
             th_mask = torch.from_numpy(mask.reshape(1, h, w, c).transpose(0, 3, 1, 2)).float().cuda()
@@ -46,6 +46,6 @@ class OcclusionExplainer:
             delta_aggregated = np.sum(delta.reshape(n, -1), -1, keepdims=True)
             heatmap[:, p.flatten()] += delta_aggregated
             weights[:, p.flatten()] += p.size
-    
+
         attribution = np.reshape(heatmap / (weights + 1e-10), (n, h, w, c)).transpose(0, 3, 1, 2)
         return torch.from_numpy(attribution)

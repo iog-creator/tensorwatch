@@ -8,7 +8,7 @@ def static_bar():
     v = tw.Visualizer(s, vis_type='bar')
     v.show()
 
-    for i in range(10):
+    for _ in range(10):
         s.write(int(random.random()*10))
 
     tw.plt_loop()
@@ -22,7 +22,7 @@ def dynamic_bar():
     v.show()
 
     for i in range(100):
-        s.write([('a'+str(i), random.random()*10) for i in range(10)])
+        s.write([(f'a{str(i)}', random.random()*10) for i in range(10)])
         tw.plt_loop(count=3)
 
 def dynamic_bar3d():

@@ -48,7 +48,7 @@ def dump_tf_graph(tfgraph, tfgraphdef):
     tfgraph: A TF Graph object.
     tfgraphdef: A TF GraphDef object.
     """
-    print("Nodes ({})".format(len(tfgraphdef.node)))
+    print(f"Nodes ({len(tfgraphdef.node)})")
     f = "{:15} {:59} {:20} {}"
     print(f.format("kind", "scopeName", "shape", "inputs"))
     for node in tfgraphdef.node:
@@ -80,7 +80,7 @@ def import_graph(hl_graph, tf_graph, output=None, verbose=False):
             op,  uid, name, shape, params = import_node(tf_node, tf_graph, verbose)
         except:
             if verbose:
-                logging.exception("Failed to read node {}".format(tf_node))
+                logging.exception(f"Failed to read node {tf_node}")
             continue
 
         # Add node
@@ -111,7 +111,7 @@ def import_node(tf_node, tf_graph, verbose=False):
                 shape = shape.as_list()
         except:
             if verbose:
-                logging.exception("Error reading shape of {}".format(tf_node.name))
+                logging.exception(f"Error reading shape of {tf_node.name}")
 
     # Parameters
     # At this stage, we really only care about two parameters:
@@ -122,14 +122,14 @@ def import_node(tf_node, tf_graph, verbose=False):
     # The weights input has the shape [shape=[kernel, kernel, in_channels, filters]]
     # So we must fish for it
     params = {}
-    if op == "Conv2D" or op == "DepthwiseConv2dNative":
+    if op in ["Conv2D", "DepthwiseConv2dNative"]:
         kernel_shape = tf.graph_util.tensor_shape_from_node_def_name(tf_graph, tf_node.input[1])
         kernel_shape = [int(a) for a in kernel_shape]
-        params["kernel_shape"] = kernel_shape[0:2]
+        params["kernel_shape"] = kernel_shape[:2]
         if 'strides' in tf_node.attr.keys():
             strides = [int(a) for a in tf_node.attr['strides'].list.i]
             params["stride"] = strides[1:3]
-    elif op == "MaxPool" or op == "AvgPool":
+    elif op in ["MaxPool", "AvgPool"]:
         # 2/ the stride used by pooling layers
         # See https://stackoverflow.com/questions/44124942/how-to-access-values-in-protos-in-tensorflow
         if 'ksize' in tf_node.attr.keys():

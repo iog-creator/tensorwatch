@@ -38,12 +38,9 @@ class LimeImagenetExplainer(LimeImageExplainer):
         super(LimeImagenetExplainer, self).__init__(model, predict_fn or self._imagenet_predict)
 
     def _preprocess_transform(self):
-        transf = transforms.Compose([
-            transforms.ToTensor(),
-            imagenet_utils.get_normalize_transform()
-        ])    
-
-        return transf   
+        return transforms.Compose(
+            [transforms.ToTensor(), imagenet_utils.get_normalize_transform()]
+        )   
 
     def preprocess_input(self, inp):
         return np.array(imagenet_utils.get_resize_transform()(inp))

@@ -22,11 +22,11 @@ class GEParser():
     def parallel(self):
         index = self.index
         expressions = []
-        while len(expressions) == 0 or self.token("|"):
-            e = self.expression()
-            if not e:
+        while not expressions or self.token("|"):
+            if e := self.expression():
+                expressions.append(e)
+            else:
                 break
-            expressions.append(e)
         if len(expressions) >= 2:
             return ParallelPattern(expressions)
         # No match. Reset index
@@ -35,12 +35,12 @@ class GEParser():
     def serial(self):
         index = self.index
         expressions = []
-        while len(expressions) == 0 or self.token(">"):
-            e = self.expression()
-            if not e:
-                break
-            expressions.append(e)
+        while not expressions or self.token(">"):
+            if e := self.expression():
+                expressions.append(e)
 
+            else:
+                break
         if len(expressions) >= 2:
             return SerialPattern(expressions)
         self.index = index
@@ -57,8 +57,7 @@ class GEParser():
         return e
 
     def op(self):
-        t = self.re(r"\w+")
-        if t:
+        if t := self.re(r"\w+"):
             c = self.condition()
             return NodePattern(t, c)
     
@@ -66,8 +65,7 @@ class GEParser():
         # TODO: not implemented yet. This function is a placeholder
         index = self.index
         if self.token("["):
-            c = self.token("1x1") or self.token("3x3")
-            if c:
+            if c := self.token("1x1") or self.token("3x3"):
                 if self.token("]"):
                     return c
             self.index = index
@@ -81,8 +79,7 @@ class GEParser():
             return s
 
     def re(self, regex, group=0):
-        m = re.match(regex, self.text[self.index:])
-        if m:
+        if m := re.match(regex, self.text[self.index :]):
             self.index += len(m.group(0))
             return m.group(group)
             
@@ -95,13 +92,12 @@ class NodePattern():
     def match(self, graph, node):
         if isinstance(node, list):
             return [], None
-        if self.op == node.op:
-            following = graph.outgoing(node)
-            if len(following) == 1:
-                following = following[0]
-            return [node], following
-        else:
+        if self.op != node.op:
             return [], None
+        following = graph.outgoing(node)
+        if len(following) == 1:
+            following = following[0]
+        return [node], following
 
 
 class SerialPattern():

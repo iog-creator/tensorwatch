@@ -60,11 +60,11 @@ def analyze(model:nn.Module, input_size, query_granularity:int):
 
 def _for_leaf(model, fn, *args):
     for name, module in model.named_modules():
-        if len(list(module.children())) == 0:
+        if not list(module.children()):
             fn(name, module, *args)
 
 def _register_hooks(name:str, module:nn.Module, pre_hooks, post_hooks, stats):
-    assert isinstance(module, nn.Module) and len(list(module.children()))==0
+    assert isinstance(module, nn.Module) and not list(module.children())
 
     if name in stats:
         return
@@ -105,10 +105,10 @@ def _forward_post_hook(module_stats:ModuleStats, module:nn.Module, input, output
     module_stats.input_shape = inputs[0].size()
     module_stats.output_shape = outputs[0].size()
 
-    parameter_quantity = 0
-    # iterate through parameters and count num params
-    for name, p in module.named_parameters():
-        parameter_quantity += (0 if p is None else torch.numel(p.data))
+    parameter_quantity = sum(
+        (0 if p is None else torch.numel(p.data))
+        for name, p in module.named_parameters()
+    )
     module_stats.parameter_quantity = parameter_quantity
 
     inference_memory = 1
@@ -130,7 +130,7 @@ def get_parent_node(root_node, stat_node_name):
     node = root_node
     names = stat_node_name.split('.')
     for i in range(len(names) - 1):
-        node_name = '.'.join(names[0:i+1])
+        node_name = '.'.join(names[:i+1])
         child_index = node.find_child_index(node_name)
         assert child_index != -1
         node = node.children[child_index]
@@ -146,7 +146,7 @@ def _convert_leaf_modules_to_stat_tree(leaf_modules):
         names = name.split('.')
         for i in range(len(names)):
             create_index += 1
-            stat_node_name = '.'.join(names[0:i+1])
+            stat_node_name = '.'.join(names[:i+1])
             parent_node = get_parent_node(root_node, stat_node_name)
             node = StatNode(name=stat_node_name, parent=parent_node)
             parent_node.add_child(node)

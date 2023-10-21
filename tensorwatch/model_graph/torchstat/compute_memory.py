@@ -19,7 +19,6 @@ def compute_memory(module, inp, out):
     else:
         #print(f"[Memory]: {type(module).__name__} is not supported!")
         return 0, 0
-    pass
 
 
 def num_params(module):

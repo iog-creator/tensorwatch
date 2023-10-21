@@ -39,8 +39,7 @@ class FileStream(Stream):
             self._file.seek(0, 0) # we may filter this stream multiple times
             while not utils.is_eof(self._file):
                 yield pickle.load(self._file)
-        for item in super(FileStream, self).read_all():
-            yield item
+        yield from super(FileStream, self).read_all()
 
     def load(self, from_stream:'Stream'=None):
         if self.for_write:

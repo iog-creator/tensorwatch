@@ -59,7 +59,7 @@ class WatcherBase:
     def devices_or_default(self, devices:Sequence[str])->Sequence[str]:
         return devices # no default devices, derived classes should override this
 
-    def open_stream(self, name:str=None, devices:Sequence[str]=None)->Stream:
+    def open_stream(self, name:str=None, devices:Sequence[str]=None) -> Stream:
         r"""Opens stream from specified devices or returns one by name if
         it was created before.
         """
@@ -83,42 +83,45 @@ class WatcherBase:
                 if stream_info is not None:
                     break
             if stream_info is None:
-                raise ValueError('Requested stream was not found: ' + name)
+                raise ValueError(f'Requested stream was not found: {name}')
             return stream_info.stream
-        
+
         # if we have device, first create stream and then attach device to it
         stream = Stream(stream_name=name)
         for device_stream in device_streams:
             # each device may have multiple streams so let's filter it
             filtered_stream = FilteredStream(source_stream=device_stream, 
                 filter_expr=functools.partial(WatcherBase._filter_stream, name) \
-                                if name is not None else None)
+                                    if name is not None else None)
             stream.subscribe(filtered_stream)
             stream.held_refs.add(filtered_stream) # otherwise filtered stream will be destroyed by gc
         return stream
 
-    def _filter_stream(stream_name, steam_item):
+    def _filter_stream(self, steam_item):
         if isinstance(steam_item, StreamItem):
-            return (steam_item, steam_item.stream_name is None or steam_item.stream_name == stream_name)
+            return (
+                steam_item,
+                steam_item.stream_name is None or steam_item.stream_name == self,
+            )
         else:
             return (steam_item, True)
 
     def create_stream(self, name:str=None, devices:Sequence[str]=None, event_name:str='',
-        expr=None, throttle:float=None, vis_args:VisArgs=None)->Stream:
+        expr=None, throttle:float=None, vis_args:VisArgs=None) -> Stream:
 
         r"""Create stream with or without expression and attach to devices where 
         it will be written to.
         """
         stream_index = self._stream_count
-        stream_name = name or 'Watcher{}-Stream{}'.format(self.index, stream_index)
+        stream_name = name or f'Watcher{self.index}-Stream{stream_index}'
         self._stream_count += 1
 
         # we allow few shortcuts, so modify expression if needed
         expr = expr
-        if expr=='' or expr=='x':
+        if expr in ['', 'x']:
             expr = 'map(lambda x:x, l)'
         elif expr and expr.strip().startswith('lambda '):
-            expr = 'map({}, l)'.format(expr)
+            expr = f'map({expr}, l)'
         # else no rewrites
 
         # if no expression specified then we don't create evaler
@@ -197,7 +200,7 @@ class WatcherBase:
         # event_name = stream_info.req.event_name
         if disable_stream:
             stream_info.disabled = True
-            utils.debug_log("{} stream disabled".format(stream_info.req.stream_name), verbosity=1)
+            utils.debug_log(f"{stream_info.req.stream_name} stream disabled", verbosity=1)
 
         stream_item = StreamItem(value=eval_return.result, exception=eval_return.exception, ended=True)
         stream_info.stream.write(stream_item)
@@ -205,13 +208,10 @@ class WatcherBase:
     def del_stream(self, name:str) -> None:
         utils.debug_log("deleting stream", name)
         for stream_infos in self._stream_infos.values(): # per event
-            stream_info = stream_infos.get(name, None)
-            if stream_info:
+            if stream_info := stream_infos.get(name, None):
                 stream_info.disabled = True
                 stream_info.evaler.abort()
                 return True
-                #TODO: to enable delete we need to protect iteration in set_vars
-                #del stream_reqs[stream_info.req.name]
         return False
 
     def make_notebook(self, filename:str=None):

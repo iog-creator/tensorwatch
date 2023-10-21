@@ -8,8 +8,7 @@ from . import utils, image_utils
 import os
 
 def get_model(model_name):
-    model = models.__dict__[model_name](pretrained=True)
-    return model
+    return models.__dict__[model_name](pretrained=True)
 
 def tensors2batch(tensors, preprocess_transform=None):
     if preprocess_transform:
@@ -46,10 +45,8 @@ def batch_predict(model, inputs, input_transform=None, device=None):
     model.eval()
     model.to(device)
     batch = batch.to(device)
-    
-    outputs = model(batch)
 
-    return outputs
+    return model(batch)
 
 def logits2probabilities(logits):
     return F.softmax(logits, dim=1)

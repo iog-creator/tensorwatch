@@ -32,7 +32,7 @@ class RepeatedTimer:
     def stop(self, block=False):
         self.pause_wait.set()
         self._continue_thread = False
-        if block and not (self._thread is None or not self._thread.isAlive()):
+        if block and self._thread is not None and self._thread.isAlive():
             self._thread.join()
         self._state = RepeatedTimer.State.Stopped
 
@@ -48,8 +48,8 @@ class RepeatedTimer:
     def unpause(self):
         if self._state == RepeatedTimer.State.Paused:
             self.pause_wait.set()
-            if self._state == RepeatedTimer.State.Paused:
-                self._state = RepeatedTimer.State.Running
+        if self._state == RepeatedTimer.State.Paused:
+            self._state = RepeatedTimer.State.Running
         # else nothing to do
 
     def _runner(self):

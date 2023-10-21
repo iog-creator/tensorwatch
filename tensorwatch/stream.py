@@ -32,12 +32,16 @@ class Stream:
         self.items_written = 0
 
     def subscribe(self, stream:'Stream'): # notify other stream
-        utils.debug_log('{} added {} as subscription'.format(self.stream_name, stream.stream_name))
+        utils.debug_log(
+            f'{self.stream_name} added {stream.stream_name} as subscription'
+        )
         stream._subscribers.add(self)
         self._subscribed_to.add(stream)
 
     def unsubscribe(self, stream:'Stream'):
-        utils.debug_log('{} removed {} as subscription'.format(self.stream_name, stream.stream_name))
+        utils.debug_log(
+            f'{self.stream_name} removed {stream.stream_name} as subscription'
+        )
         stream._subscribers.discard(self)
         self._subscribed_to.discard(stream)
         self.held_refs.discard(stream)
@@ -66,8 +70,7 @@ class Stream:
 
     def read_all(self, from_stream:'Stream'=None):
         for subscribed_to in self._subscribed_to:
-            for stream_item in subscribed_to.read_all(from_stream=self):
-                yield stream_item
+            yield from subscribed_to.read_all(from_stream=self)
 
     def load(self, from_stream:'Stream'=None):
         for subscribed_to in self._subscribed_to:
